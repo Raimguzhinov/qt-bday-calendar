@@ -8,9 +8,15 @@ Calendar::Calendar(QWidget *parent)
     ui->setupUi(this);
 }
 
-Calendar::~Calendar()
+void Calendar::setDockerPath(std::string docker_args_down)
 {
-    system("docker-compose down");
-    delete ui;
+    docker_path_ = docker_args_down;
 }
 
+Calendar::~Calendar()
+{
+    if (!docker_path_.empty()) {
+        system(docker_path_.c_str());
+    }
+    delete ui;
+}

@@ -1,8 +1,9 @@
 version: '3.5'
 
+name: mycalendar
 services:
   db:
-    restart: always 
+    restart: always
     container_name: postgres_container
     image: postgres:15.2
     environment:
