@@ -1,5 +1,4 @@
-#ifndef CALENDAR_H
-#define CALENDAR_H
+#pragma once
 
 #include <QMainWindow>
 
@@ -18,4 +17,3 @@ public:
 private:
     Ui::Calendar *ui;
 };
-#endif // CALENDAR_H

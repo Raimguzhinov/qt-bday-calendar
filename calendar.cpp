@@ -1,4 +1,4 @@
-#include "calendar.h"
+#include "calendar.hpp"
 #include "./ui_calendar.h"
 
 Calendar::Calendar(QWidget *parent)
@@ -10,6 +10,7 @@ Calendar::Calendar(QWidget *parent)
 
 Calendar::~Calendar()
 {
+    system("docker-compose down");
     delete ui;
 }
 
