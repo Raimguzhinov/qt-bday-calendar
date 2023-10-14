@@ -4,19 +4,31 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QSqlDatabase>
+#include <QString>
 #include <QTextStream>
 #include <QtSql>
+#include <cstdlib>
 
-inline bool createConnection()
+QSqlDatabase createConnection(bool isLocalhost = false)
 {
     QSqlDatabase db = QSqlDatabase::addDatabase("QPSQL");
     db.setDatabaseName("postgres");
-    db.setHostName("127.0.0.1");
+    const char *hostname = std::getenv("DB_HOSTNAME");
+    if (!isLocalhost && hostname) {
+        db.setHostName(QString::fromUtf8(hostname));
+    } else {
+        db.setHostName("127.0.0.1");
+    }
     db.setPort(5433);
     db.setUserName("postgres");
     db.setPassword("postgres");
-    if (!db.open()) {
-        QMessageBox::warning(nullptr, "Ошибка БД", db.lastError().text());
+    return db;
+}
+
+inline bool checkConnection(QSqlDatabase *db)
+{
+    if (!(*db).open()) {
+        QMessageBox::warning(nullptr, "Ошибка БД", (*db).lastError().text());
         return false;
     } else {
         QMessageBox::information(nullptr, "Успешно", "Соединение с БД установлено!");
@@ -53,4 +65,37 @@ inline bool createDocker(QString filePath)
     } else {
         return false;
     }
+}
+
+std::string localhostConnection(bool isLocalhost, QSettings &settings)
+{
+    std::string docker_args_down = "";
+    if (isLocalhost) {
+        QString defaultFilePath = settings.value("filePath").toString();
+        QString filePath;
+        if (defaultFilePath.isEmpty()) {
+            filePath = QFileDialog::getExistingDirectory(nullptr,
+                                                         "Выберите путь для сохранения файлов",
+                                                         QString());
+            if (filePath.isEmpty()) {
+                QMessageBox::critical(nullptr, "Ошибка", "Не выбран путь для сохранения файла");
+                return "Directory Error";
+            }
+            settings.setValue("filePath", filePath);
+            if (!createDocker(filePath)) {
+                QMessageBox::critical(nullptr, "Ошибка", "Не удалось открыть файл для записи");
+            } else {
+                QMessageBox::information(nullptr, "Успех", "Файл успешно записан");
+            }
+        } else {
+            filePath = defaultFilePath;
+        }
+
+        QString fileName = filePath + "/docker-compose.yaml";
+        std::string docker_args_up = "docker-compose -f " + fileName.toStdString() + " up -d";
+        docker_args_down = "docker-compose -f " + fileName.toStdString() + " down";
+
+        system(docker_args_up.c_str());
+    }
+    return docker_args_down;
 }
