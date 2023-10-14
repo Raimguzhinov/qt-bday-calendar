@@ -64,3 +64,5 @@ void Calendar::on_tableView_clicked(const QModelIndex &index)
 {
     current_row_index_ = index.row();
 }
+
+void Calendar::on_pushButton_4_clicked() {}

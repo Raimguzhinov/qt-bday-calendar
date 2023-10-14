@@ -7,19 +7,19 @@
 #include <QString>
 #include <QTextStream>
 #include <QtSql>
-#include <cstdlib>
 
 QSqlDatabase createConnection(bool isLocalhost = false)
 {
     QSqlDatabase db = QSqlDatabase::addDatabase("QPSQL");
     db.setDatabaseName("postgres");
-    const char *hostname = std::getenv("DB_HOSTNAME");
+    const char *hostname = std::getenv("CALENDAR_DB_HOSTNAME");
+    const char *port = std::getenv("CALENDAR_DB_PORT");
     if (!isLocalhost && hostname) {
         db.setHostName(QString::fromUtf8(hostname));
     } else {
         db.setHostName("127.0.0.1");
     }
-    db.setPort(5433);
+    db.setPort(std::atoi(port));
     db.setUserName("postgres");
     db.setPassword("postgres");
     return db;
