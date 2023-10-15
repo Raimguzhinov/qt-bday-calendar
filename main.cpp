@@ -53,6 +53,9 @@ int main(int argc, char *argv[])
     Calendar w(nullptr, &db);
     w.setDockerPath(docker_args);
     QVector<QString> bdates, fios;
+    QVector<qint64> friends_id;
+    qint64 my_id = 0;
+    QString my_fio = "";
     auto oauth = new QOAuth2AuthorizationCodeFlow(&w);
     auto replyHandler = new QOAuthHttpServerReplyHandler(80, &w);
 
@@ -66,32 +69,55 @@ int main(int argc, char *argv[])
                      &QOAuth2AuthorizationCodeFlow::authorizeWithBrowser,
                      &QDesktopServices::openUrl);
 
-    QObject::connect(oauth, &QOAuth2AuthorizationCodeFlow::granted, [&bdates, &fios, oauth]() {
-        const QUrl getFriends{"https://api.vk.com/method/friends.get?fields=bdate"};
-        auto network_reply = oauth->post(getFriends, {{"v", 5.131}});
-        QObject::connect(network_reply, &QNetworkReply::finished, [&bdates, &fios, network_reply]() {
-            network_reply->deleteLater();
-
-            QJsonDocument response = QJsonDocument::fromJson(network_reply->readAll());
-
-            qDebug() << "All friends ids:";
-            for (const auto &user_id : response["response"]["items"].toArray()) {
-                if (user_id.toObject()["bdate"].toString() != "") {
-                    QString tmp_date_resolver = user_id.toObject()["bdate"].toString();
-                    if (tmp_date_resolver.length() <= 5) {
-                        tmp_date_resolver.append(".0000");
-                        bdates.push_back(tmp_date_resolver);
-                    } else {
-                        bdates.push_back(user_id.toObject()["bdate"].toString());
+    QObject::connect(
+        oauth, &QOAuth2AuthorizationCodeFlow::granted, [&w, &friends_id, &bdates, &fios, oauth]() {
+            const QUrl getFriends{"https://api.vk.com/method/friends.get?fields=bdate"};
+            auto network_reply = oauth->post(getFriends, {{"v", 5.131}});
+            QObject::connect(
+                network_reply,
+                &QNetworkReply::finished,
+                [&w, &friends_id, &bdates, &fios, network_reply]() {
+                    network_reply->deleteLater();
+                    QJsonDocument response = QJsonDocument::fromJson(network_reply->readAll());
+                    qDebug() << "All my friends' birthdays:";
+                    for (const auto &user_id : response["response"]["items"].toArray()) {
+                        if (user_id.toObject()["bdate"].toString() != "") {
+                            QString tmp_date_resolver = user_id.toObject()["bdate"].toString();
+                            if (tmp_date_resolver.length() <= 5) {
+                                tmp_date_resolver.append(".0000");
+                                bdates.push_back(tmp_date_resolver);
+                            } else {
+                                bdates.push_back(user_id.toObject()["bdate"].toString());
+                            }
+                            friends_id.push_back(user_id.toObject()["id"].toInteger());
+                            fios.push_back(user_id.toObject()["first_name"].toString() + " "
+                                           + user_id.toObject()["last_name"].toString());
+                        }
                     }
-                    fios.push_back(user_id.toObject()["first_name"].toString() + " "
-                                   + user_id.toObject()["last_name"].toString());
-                }
-            }
-            for (int i = 0; i < bdates.size(); ++i) {
-                qDebug() << fios[i] << "\t" << bdates[i];
-            }
+                    w.setFIOs(fios);
+                    w.setBDays(bdates);
+                    for (int i = 0; i < bdates.size(); ++i) {
+                        qDebug() << friends_id[i] << "\t" << fios[i] << "\t" << bdates[i];
+                    }
+                });
         });
+    QObject::connect(oauth, &QOAuth2AuthorizationCodeFlow::granted, [&w, &my_id, &my_fio, oauth]() {
+        const QUrl getUser{"https://api.vk.com/method/users.get"};
+        auto network_reply = oauth->post(getUser, {{"v", 5.131}});
+        QObject::connect(network_reply,
+                         &QNetworkReply::finished,
+                         [&w, &my_id, &my_fio, network_reply] {
+                             network_reply->deleteLater();
+                             QJsonDocument response = QJsonDocument::fromJson(
+                                 network_reply->readAll());
+                             QJsonObject object = response["response"].toArray()[0].toObject();
+                             my_id = object["id"].toInteger();
+                             my_fio.append(object["first_name"].toString() + " "
+                                           + object["last_name"].toString());
+                             w.setMYID(my_id);
+                             w.setMYFIO(my_fio);
+                             qDebug() << "My ID: " << my_id << "\t" << my_fio;
+                         });
     });
     oauth->grant();
     w.show();

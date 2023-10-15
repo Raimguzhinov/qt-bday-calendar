@@ -49,6 +49,31 @@ void Calendar::on_pushButton_clicked()
     }
 }
 
+void Calendar::setBDays(QVector<QString> bdates)
+{
+    bdates_ = bdates;
+}
+
+void Calendar::setFIOs(QVector<QString> fios)
+{
+    fios_ = fios;
+}
+
+void Calendar::setIDs(QVector<qint64> ids)
+{
+    ids_ = ids;
+}
+
+void Calendar::setMYID(qint64 my_id)
+{
+    my_id_ = my_id;
+}
+void Calendar::setMYFIO(QString my_fio)
+{
+    my_fio_ = my_fio;
+    ui->textEdit->setPlainText(my_fio_);
+}
+
 void Calendar::on_pushButton_2_clicked()
 {
     model_->insertRow(model_->rowCount());
