@@ -4,7 +4,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSqlRecord>
-#include <QSqlTableModel>
+#include <QSqlRelationalTableModel>
 #include <string>
 
 QT_BEGIN_NAMESPACE
@@ -32,6 +32,8 @@ private slots:
     void on_pushButton_4_clicked();
     void on_tableView_clicked(const QModelIndex &index);
 
+    void on_pushButton_6_clicked();
+
 signals:
     void sendData(QString str);
 
@@ -40,7 +42,7 @@ private:
     std::string docker_path_ = "error: there was no connection closure";
     QSqlDatabase db_;
     QSqlQuery *query_;
-    QSqlTableModel *model_;
+    QSqlRelationalTableModel *model_;
     size_t current_row_index_;
     QVector<QString> bdates_, fios_;
     QVector<qint64> ids_;

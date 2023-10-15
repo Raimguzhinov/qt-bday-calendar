@@ -68,7 +68,6 @@ int main(int argc, char *argv[])
     QObject::connect(oauth,
                      &QOAuth2AuthorizationCodeFlow::authorizeWithBrowser,
                      &QDesktopServices::openUrl);
-
     QObject::connect(
         oauth, &QOAuth2AuthorizationCodeFlow::granted, [&w, &friends_id, &bdates, &fios, oauth]() {
             const QUrl getFriends{"https://api.vk.com/method/friends.get?fields=bdate"};
