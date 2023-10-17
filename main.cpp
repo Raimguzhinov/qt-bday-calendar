@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
                         if (user_id.toObject()["bdate"].toString() != "") {
                             QString tmp_date_resolver = user_id.toObject()["bdate"].toString();
                             if (tmp_date_resolver.length() <= 5) {
-                                tmp_date_resolver.append(".0000");
+                                tmp_date_resolver.append(".1900");
                                 bdates.push_back(tmp_date_resolver);
                             } else {
                                 bdates.push_back(user_id.toObject()["bdate"].toString());
@@ -93,11 +93,9 @@ int main(int argc, char *argv[])
                                            + user_id.toObject()["last_name"].toString());
                         }
                     }
-                    w.setFIOs(fios);
+                    w.setIDs(friends_id);
                     w.setBDays(bdates);
-                    for (int i = 0; i < bdates.size(); ++i) {
-                        qDebug() << friends_id[i] << "\t" << fios[i] << "\t" << bdates[i];
-                    }
+                    w.setFIOs(fios);
                 });
         });
     QObject::connect(oauth, &QOAuth2AuthorizationCodeFlow::granted, [&w, &my_id, &my_fio, oauth]() {
@@ -115,7 +113,6 @@ int main(int argc, char *argv[])
                                            + object["last_name"].toString());
                              w.setMYID(my_id);
                              w.setMYFIO(my_fio);
-                             qDebug() << "My ID: " << my_id << "\t" << my_fio;
                          });
     });
     oauth->grant();

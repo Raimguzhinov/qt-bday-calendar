@@ -7,7 +7,8 @@ Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
     , ui(new Ui::Calendar)
 {
     ui->setupUi(this);
-    //query_ = new QSqlQuery(db_);
+    query_ = new QSqlQuery(db_);
+    query_->exec("SET datestyle TO ISO, DMY;");
     model_ = new QSqlRelationalTableModel(this, db_);
     model_->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
     model_->setTable("birthdays");
@@ -25,6 +26,8 @@ Calendar::~Calendar()
     if (!docker_path_.empty()) {
         system(docker_path_.c_str());
     }
+    delete query_;
+    delete model_;
     delete ui;
 }
 
@@ -44,6 +47,11 @@ void Calendar::on_pushButton_clicked()
     }
 }
 
+void Calendar::setIDs(QVector<qint64> ids)
+{
+    ids_ = ids;
+}
+
 void Calendar::setBDays(QVector<QString> bdates)
 {
     bdates_ = bdates;
@@ -52,16 +60,60 @@ void Calendar::setBDays(QVector<QString> bdates)
 void Calendar::setFIOs(QVector<QString> fios)
 {
     fios_ = fios;
-}
-
-void Calendar::setIDs(QVector<qint64> ids)
-{
-    ids_ = ids;
+    setFriendsInfo();
 }
 
 void Calendar::setMYID(qint64 my_id)
 {
     my_id_ = my_id;
+}
+void Calendar::setMYFIO(QString my_fio)
+{
+    my_fio_ = my_fio;
+}
+
+void Calendar::setFriendsInfo()
+{
+    setMYInfo();
+    if (!ids_.isEmpty() && !fios_.isEmpty() && !bdates_.isEmpty()) {
+        for (int i = 0; i < ids_.size(); ++i) {
+            query_ = new QSqlQuery(db_);
+            qDebug() << ids_[i] << "\t" << fios_[i] << "\t" << bdates_[i];
+            query_->prepare(
+                "INSERT INTO birthdays VALUES (:friend_vk_id, :friend_name, :bday_date);");
+            query_->bindValue(":friend_vk_id", ids_[i]);
+            query_->bindValue(":friend_name", fios_[i]);
+            query_->bindValue(":bday_date", bdates_[i]);
+            query_->exec();
+            query_->prepare("INSERT INTO user_celebratings (self_user_id, self_friends_id) "
+                            "VALUES (:self_user_id, :self_friends_id);");
+            query_->bindValue(":self_user_id", my_id_);
+            query_->bindValue(":self_friends_id", ids_[i]);
+            query_->exec();
+        }
+    } else {
+        ui->statusbar->showMessage("Предупреждение. Не удалось считать информацию о друзьях!");
+    }
+    setTotalInfo();
+}
+
+void Calendar::setMYInfo()
+{
+    if (my_fio_ != "" && my_id_ != 0) {
+        qDebug() << "My ID: " << my_id_ << "\t" << my_fio_;
+        query_ = new QSqlQuery(db_);
+        query_->prepare("INSERT INTO users (user_vk_id, user_name) "
+                        "VALUES (:user_vk_id, :user_name);");
+        query_->bindValue(":user_vk_id", my_id_);
+        query_->bindValue(":user_name", my_fio_);
+        query_->exec();
+    } else {
+        ui->statusbar->showMessage("Предупреждение. Вы не авторизовались!");
+    }
+}
+
+void Calendar::setTotalInfo()
+{
     model_->setFilter("self_user_id=" + QString::number(my_id_));
     model_->select();
     model_->setHeaderData(0, Qt::Horizontal, tr("мой id"));
@@ -70,10 +122,6 @@ void Calendar::setMYID(qint64 my_id)
     model_->setHeaderData(3, Qt::Horizontal, tr("описание"));
     ui->tableView->setModel(model_);
     ui->tableView->hideColumn(0);
-}
-void Calendar::setMYFIO(QString my_fio)
-{
-    my_fio_ = my_fio;
     ui->textEdit->setPlainText(my_fio_);
 }
 
