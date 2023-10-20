@@ -31,15 +31,14 @@ public:
     void setOauth(QOAuth2AuthorizationCodeFlow *oauth);
 
 private slots:
-    void on_pushButton_clicked();
-    void on_pushButton_2_clicked();
-    void on_pushButton_3_clicked();
-    void on_pushButton_4_clicked();
     void on_tableView_clicked(const QModelIndex &index);
-    void on_pushButton_6_clicked();
+    void on_sign_inButton_clicked();
+
+    void on_calendarWidget_clicked(const QDate &date);
 
 private:
     Ui::Calendar *ui;
+    QSettings *settings_;
     std::string docker_path_ = "error: there was no connection closure";
     QSqlDatabase db_;
     QSqlQuery *query_;

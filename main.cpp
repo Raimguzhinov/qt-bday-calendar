@@ -115,6 +115,6 @@ int main(int argc, char *argv[])
                          });
     });
     w.setOauth(oauth);
-    oauth->grant();
+    //oauth->grant();
     return a.exec();
 }
