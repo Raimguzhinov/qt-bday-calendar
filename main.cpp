@@ -114,6 +114,7 @@ int main(int argc, char *argv[])
                              w.setMYFIO(my_fio);
                          });
     });
+    w.setOauth(oauth);
     oauth->grant();
     w.show();
     return a.exec();
