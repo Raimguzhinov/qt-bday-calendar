@@ -70,6 +70,7 @@ void Calendar::setMYID(qint64 &my_id)
     my_id_ = my_id;
     my_id = 0;
 }
+
 void Calendar::setMYFIO(QString &my_fio)
 {
     my_fio_ = my_fio;
@@ -125,6 +126,7 @@ void Calendar::setTotalInfo()
     model_->setHeaderData(2, Qt::Horizontal, tr("дата рождения"));
     model_->setHeaderData(3, Qt::Horizontal, tr("описание"));
     ui->tableView->setModel(model_);
+    ui->tableView->resizeColumnsToContents();
     ui->tableView->hideColumn(0);
     ui->label->setText(my_fio_);
     if (ui->label->text() != "account") {

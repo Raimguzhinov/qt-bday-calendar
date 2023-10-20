@@ -3,6 +3,7 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QOAuth2AuthorizationCodeFlow>
+#include <QSettings>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSqlRecord>

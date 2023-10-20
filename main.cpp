@@ -2,9 +2,6 @@
 #include "connection.hpp"
 
 #include <QApplication>
-#include <QSettings>
-
-#include <QApplication>
 #include <QDesktopServices>
 #include <QFile>
 #include <QJsonArray>
@@ -13,6 +10,7 @@
 #include <QNetworkReply>
 #include <QOAuth2AuthorizationCodeFlow>
 #include <QOAuthHttpServerReplyHandler>
+#include <QSettings>
 #include <QUrl>
 #include <QVector>
 #include <QWidget>
@@ -30,7 +28,7 @@ constexpr quint32 scopeMask = 2;
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    QSettings settings("BirthdayCalendar", "MySettings");
+    QSettings settings("BirthdayCalendar", "GeneralSettings");
     bool isLocalhost = false;
     std::string docker_args = localhostConnection(isLocalhost, settings);
     if (docker_args == "Directory Error") {
@@ -52,6 +50,8 @@ int main(int argc, char *argv[])
     } while (!checkConnection(&db));
     Calendar w(nullptr, &db);
     w.setDockerPath(docker_args);
+    w.show();
+
     QVariantList bdates, fios, friends_id;
     qint64 my_id = 0;
     QString my_fio = "";
@@ -116,6 +116,5 @@ int main(int argc, char *argv[])
     });
     w.setOauth(oauth);
     oauth->grant();
-    w.show();
     return a.exec();
 }
