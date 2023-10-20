@@ -27,6 +27,7 @@ Calendar::~Calendar()
         system(docker_path_.c_str());
     }
     delete query_;
+    delete query2_;
     delete model_;
     delete ui;
 }
@@ -47,17 +48,17 @@ void Calendar::on_pushButton_clicked()
     }
 }
 
-void Calendar::setIDs(QVector<qint64> ids)
+void Calendar::setIDs(QVariantList ids)
 {
     ids_ = ids;
 }
 
-void Calendar::setBDays(QVector<QString> bdates)
+void Calendar::setBDays(QVariantList bdates)
 {
     bdates_ = bdates;
 }
 
-void Calendar::setFIOs(QVector<QString> fios)
+void Calendar::setFIOs(QVariantList fios)
 {
     fios_ = fios;
     setFriendsInfo();
@@ -76,15 +77,16 @@ void Calendar::setFriendsInfo()
 {
     setMYInfo();
     if (!ids_.isEmpty() && !fios_.isEmpty() && !bdates_.isEmpty()) {
+        query_ = new QSqlQuery(db_);
+        qDebug() << ids_ << "\t" << fios_ << "\t" << bdates_;
+        query_->prepare("INSERT INTO birthdays VALUES (?, ?, ?)");
+        query_->addBindValue(ids_);
+        query_->addBindValue(fios_);
+        query_->addBindValue(bdates_);
+        if (!query_->execBatch())
+            qDebug() << query_->lastError();
+
         for (int i = 0; i < ids_.size(); ++i) {
-            query_ = new QSqlQuery(db_);
-            qDebug() << ids_[i] << "\t" << fios_[i] << "\t" << bdates_[i];
-            query_->prepare(
-                "INSERT INTO birthdays VALUES (:friend_vk_id, :friend_name, :bday_date);");
-            query_->bindValue(":friend_vk_id", ids_[i]);
-            query_->bindValue(":friend_name", fios_[i]);
-            query_->bindValue(":bday_date", bdates_[i]);
-            query_->exec();
             query_->prepare("INSERT INTO user_celebratings (self_user_id, self_friends_id) "
                             "VALUES (:self_user_id, :self_friends_id);");
             query_->bindValue(":self_user_id", my_id_);

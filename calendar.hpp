@@ -21,9 +21,9 @@ public:
     Calendar(QWidget *parent = nullptr, QSqlDatabase *db = nullptr);
     ~Calendar();
     void setDockerPath(std::string docker_args_down);
-    void setIDs(QVector<qint64> ids);
-    void setBDays(QVector<QString> bdates);
-    void setFIOs(QVector<QString> fios);
+    void setIDs(QVariantList ids);
+    void setBDays(QVariantList bdates);
+    void setFIOs(QVariantList fios);
     void setMYID(qint64 my_id);
     void setMYFIO(QString my_fio);
 
@@ -46,8 +46,7 @@ private:
     QSqlQuery *query2_;
     QSqlRelationalTableModel *model_;
     size_t current_row_index_;
-    QVector<QString> bdates_, fios_ = {};
-    QVector<qint64> ids_ = {};
+    QVariantList bdates_, fios_, ids_ = {};
     qint64 my_id_ = 0;
     QString my_fio_ = "";
     void setFriendsInfo();

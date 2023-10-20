@@ -52,8 +52,7 @@ int main(int argc, char *argv[])
     } while (!checkConnection(&db));
     Calendar w(nullptr, &db);
     w.setDockerPath(docker_args);
-    QVector<QString> bdates, fios;
-    QVector<qint64> friends_id;
+    QVariantList bdates, fios, friends_id;
     qint64 my_id = 0;
     QString my_fio = "";
     auto oauth = new QOAuth2AuthorizationCodeFlow(&w);
