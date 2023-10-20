@@ -33,7 +33,6 @@ public:
 private slots:
     void on_tableView_clicked(const QModelIndex &index);
     void on_sign_inButton_clicked();
-
     void on_calendarWidget_clicked(const QDate &date);
 
 private:
@@ -51,4 +50,5 @@ private:
     void setFriendsInfo();
     void setMYInfo();
     void setTotalInfo();
+    void getDate(const QDate &date);
 };

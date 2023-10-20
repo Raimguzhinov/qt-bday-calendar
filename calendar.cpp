@@ -142,6 +142,12 @@ void Calendar::setOauth(QOAuth2AuthorizationCodeFlow *oauth)
 void Calendar::on_tableView_clicked(const QModelIndex &index)
 {
     current_row_index_ = index.row();
+    QVariant birthdayData = index.sibling(index.row(), 2).data();
+    if (birthdayData.isValid() && birthdayData.type() == QVariant::Date) {
+        QDate birthdayDate = birthdayData.toDate();
+        getDate(birthdayDate);
+        ui->calendarWidget->setSelectedDate(birthdayDate);
+    }
 }
 
 void Calendar::on_sign_inButton_clicked()
@@ -156,7 +162,13 @@ void Calendar::on_sign_inButton_clicked()
 
 void Calendar::on_calendarWidget_clicked(const QDate &date)
 {
+    getDate(date);
+}
+
+void Calendar::getDate(const QDate &date)
+{
     ui->bithdayInfo->setPlainText("");
+    query_ = new QSqlQuery(db_);
     if (!query_->exec("SELECT bdays.* FROM birthdays bdays LEFT JOIN user_celebratings uc ON "
                       "uc.self_friends_id = bdays.friend_vk_id WHERE uc.self_user_id="
                       + QString::number(my_id_)
@@ -166,7 +178,6 @@ void Calendar::on_calendarWidget_clicked(const QDate &date)
                       + date.toString("yyyy-MM-dd") + "'::date);")) {
         qDebug() << query_->lastError().databaseText();
         qDebug() << query_->lastError().driverText();
-        query_ = new QSqlQuery(db_);
     }
     while (query_->next()) {
         QString birthdayString = "День рождения у " + query_->record().value(1).toString() + " "
