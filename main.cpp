@@ -2,6 +2,7 @@
 #include "connection.hpp"
 
 #include <QApplication>
+#include <QDate>
 #include <QDesktopServices>
 #include <QFile>
 #include <QJsonArray>
@@ -34,6 +35,7 @@ int main(int argc, char *argv[])
     if (docker_args == "Directory Error") {
         return 1;
     }
+
     QSqlDatabase db;
     errno_t errno_count = 0;
     do {
@@ -48,6 +50,22 @@ int main(int argc, char *argv[])
         }
         ++errno_count;
     } while (!checkConnection(&db));
+    auto checkDBConnection = [&]() {
+        if (!checkConnection(&db)) {
+            db.close();
+            if (!db.isValid()) {
+                std::chrono::seconds timespan(10);
+                std::this_thread::sleep_for(timespan);
+                return;
+            }
+            db = createConnection(isLocalhost);
+        }
+    };
+    QTimer timer;
+    timer.setInterval(10000);
+    QObject::connect(&timer, &QTimer::timeout, checkDBConnection);
+    timer.start();
+
     Calendar w(nullptr, &db);
     w.setDockerPath(docker_args);
     w.show();
@@ -57,6 +75,7 @@ int main(int argc, char *argv[])
     QString my_fio = "";
     auto oauth = new QOAuth2AuthorizationCodeFlow(&w);
     auto replyHandler = new QOAuthHttpServerReplyHandler(80, &w);
+    w.setOauth(oauth);
 
     oauth->setReplyHandler(replyHandler);
     oauth->setAccessTokenUrl(tokenUrl);
@@ -114,7 +133,5 @@ int main(int argc, char *argv[])
                              w.setMYFIO(my_fio);
                          });
     });
-    w.setOauth(oauth);
-    //oauth->grant();
     return a.exec();
 }

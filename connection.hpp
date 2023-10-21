@@ -31,7 +31,7 @@ inline bool checkConnection(QSqlDatabase *db)
         QMessageBox::warning(nullptr, "Ошибка БД", (*db).lastError().text());
         return false;
     } else {
-        QMessageBox::information(nullptr, "Успешно", "Соединение с БД установлено!");
+        //QMessageBox::information(nullptr, "Успешно", "Соединение с БД установлено!");
         return true;
     }
 }

@@ -13,7 +13,7 @@ Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
     ids_ = settings_->value("VK/ids").toList();
     fios_ = settings_->value("VK/fios").toList();
     bdates_ = settings_->value("VK/bdates").toList();
-
+    connect(ui->action_2, SIGNAL(triggered()), this, SLOT(log_out()));
     query_ = new QSqlQuery(db_);
     query_->exec("SET datestyle TO ISO, DMY;");
     model_ = new QSqlRelationalTableModel(this, db_);
@@ -23,7 +23,14 @@ Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
                         QSqlRelation("user_celebratings", "self_friends_id", "self_user_id"));
     if (my_id_ != 0) {
         setTotalInfo();
+    } else {
+        QTimer timer;
+        timer.setInterval(5000);
+        connect(&timer, &QTimer::timeout, this, &Calendar::on_sign_inButton_clicked);
+        timer.start();
     }
+    this->activateWindow();
+    this->setFocus();
 }
 
 void Calendar::setDockerPath(std::string docker_args_down)
@@ -128,8 +135,9 @@ void Calendar::setTotalInfo()
     ui->tableView->setModel(model_);
     ui->tableView->resizeColumnsToContents();
     ui->tableView->hideColumn(0);
+    ui->tableView->hideColumn(3);
     ui->label->setText(my_fio_);
-    if (ui->label->text() != "account") {
+    if (ui->label->text() != "Добро пожаловать!") {
         ui->sign_inButton->setDefault(false);
     }
 }
@@ -141,12 +149,12 @@ void Calendar::setOauth(QOAuth2AuthorizationCodeFlow *oauth)
 
 void Calendar::on_tableView_clicked(const QModelIndex &index)
 {
-    current_row_index_ = index.row();
+    current_row_fio_ = index.sibling(index.row(), 1).data().toString();
     QVariant birthdayData = index.sibling(index.row(), 2).data();
     if (birthdayData.isValid() && birthdayData.type() == QVariant::Date) {
-        QDate birthdayDate = birthdayData.toDate();
-        getDate(birthdayDate);
-        ui->calendarWidget->setSelectedDate(birthdayDate);
+        current_birthday_date_ = birthdayData.toDate();
+        getDate(current_birthday_date_);
+        ui->calendarWidget->setSelectedDate(current_birthday_date_);
     }
 }
 
@@ -168,7 +176,6 @@ void Calendar::on_calendarWidget_clicked(const QDate &date)
 void Calendar::getDate(const QDate &date)
 {
     ui->bithdayInfo->setPlainText("");
-    query_ = new QSqlQuery(db_);
     if (!query_->exec("SELECT bdays.* FROM birthdays bdays LEFT JOIN user_celebratings uc ON "
                       "uc.self_friends_id = bdays.friend_vk_id WHERE uc.self_user_id="
                       + QString::number(my_id_)
@@ -180,8 +187,41 @@ void Calendar::getDate(const QDate &date)
         qDebug() << query_->lastError().driverText();
     }
     while (query_->next()) {
-        QString birthdayString = "День рождения у " + query_->record().value(1).toString() + " "
-                                 + QLocale(QLocale::Russian).toString(date, "d MMMM");
-        ui->bithdayInfo->append(birthdayString);
+        QString birthdayString = query_->record().value(1).toString() + " празднует день рождения "
+                                 + QLocale(QLocale::Russian).toString(date, "d MMMM")
+                                 + "\nЗаметка: [-] " + query_->record().value(3).toString();
+        ui->bithdayInfo->append(birthdayString + "\n");
     }
+}
+
+void Calendar::on_submitButton_clicked()
+{
+    if (!query_->exec("UPDATE birthdays SET description='" + ui->lineEdit->text()
+                      + "' WHERE friend_name='" + current_row_fio_ + "';")) {
+        qDebug() << query_->lastError().databaseText();
+        qDebug() << query_->lastError().driverText();
+    }
+    model_->submitAll();
+    setTotalInfo();
+    ui->lineEdit->clear();
+    emit on_calendarWidget_clicked(current_birthday_date_);
+}
+
+void Calendar::on_lineEdit_returnPressed()
+{
+    if (!query_->exec("UPDATE birthdays SET description='" + ui->lineEdit->text()
+                      + "' WHERE friend_name='" + current_row_fio_ + "';")) {
+        qDebug() << query_->lastError().databaseText();
+        qDebug() << query_->lastError().driverText();
+    }
+    model_->submitAll();
+    setTotalInfo();
+    ui->lineEdit->clear();
+    emit on_calendarWidget_clicked(current_birthday_date_);
+}
+
+void Calendar::log_out()
+{
+    settings_->clear();
+    this->close();
 }

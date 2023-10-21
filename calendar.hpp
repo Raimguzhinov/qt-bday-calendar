@@ -8,6 +8,7 @@
 #include <QSqlQuery>
 #include <QSqlRecord>
 #include <QSqlRelationalTableModel>
+#include <QTimer>
 
 #include <string>
 
@@ -34,6 +35,9 @@ private slots:
     void on_tableView_clicked(const QModelIndex &index);
     void on_sign_inButton_clicked();
     void on_calendarWidget_clicked(const QDate &date);
+    void on_submitButton_clicked();
+    void on_lineEdit_returnPressed();
+    void log_out();
 
 private:
     Ui::Calendar *ui;
@@ -42,7 +46,8 @@ private:
     QSqlDatabase db_;
     QSqlQuery *query_;
     QSqlRelationalTableModel *model_;
-    size_t current_row_index_;
+    QString current_row_fio_;
+    QDate current_birthday_date_;
     QVariantList bdates_, fios_, ids_ = {};
     qint64 my_id_ = 0;
     QString my_fio_ = "";
