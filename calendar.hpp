@@ -48,7 +48,7 @@ private:
     QSqlRelationalTableModel *model_;
     QString current_row_fio_;
     QDate current_birthday_date_;
-    QVariantList bdates_, fios_, ids_ = {};
+    QVariantList bdates_, fios_, ids_, my_ids_ = {};
     qint64 my_id_ = 0;
     QString my_fio_ = "";
     QOAuth2AuthorizationCodeFlow *oauth_;

@@ -15,7 +15,7 @@ Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
     bdates_ = settings_->value("VK/bdates").toList();
     connect(ui->action_2, SIGNAL(triggered()), this, SLOT(log_out()));
     query_ = new QSqlQuery(db_);
-    query_->exec("SET datestyle TO ISO, DMY;");
+    query_->exec("SET datestyle = 'ISO, DMY';");
     model_ = new QSqlRelationalTableModel(this, db_);
     model_->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
     model_->setTable("birthdays");
@@ -88,20 +88,20 @@ void Calendar::setFriendsInfo()
 {
     setMYInfo();
     if (!ids_.isEmpty() && !fios_.isEmpty() && !bdates_.isEmpty()) {
+        my_ids_.fill(my_id_, ids_.size());
         qDebug() << ids_ << "\t" << fios_ << "\t" << bdates_;
-        query_->prepare("INSERT INTO birthdays VALUES (?, ?, ?)");
+        query_->prepare(
+            "INSERT INTO birthdays VALUES (?, ?, to_date(?, 'DD-MM-YYYY')) ON CONFLICT DO NOTHING");
         query_->addBindValue(ids_);
         query_->addBindValue(fios_);
         query_->addBindValue(bdates_);
         if (!query_->execBatch())
             qDebug() << query_->lastError();
-        query_->prepare("INSERT INTO user_celebratings (self_user_id, self_friends_id) "
-                        "VALUES (:self_user_id, :self_friends_id);");
-        for (int i = 0; i < ids_.size(); ++i) {
-            query_->bindValue(":self_user_id", my_id_);
-            query_->bindValue(":self_friends_id", ids_[i]);
-            query_->exec();
-        }
+        query_->prepare("INSERT INTO user_celebratings VALUES (?, ?)");
+        query_->addBindValue(my_ids_);
+        query_->addBindValue(ids_);
+        if (!query_->execBatch())
+            qDebug() << query_->lastError();
     } else {
         ui->statusbar->showMessage("Предупреждение. Не удалось считать информацию о друзьях!");
     }

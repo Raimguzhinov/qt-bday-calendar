@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     QSettings settings("BirthdayCalendar", "GeneralSettings");
-    bool isLocalhost = false;
+    bool isLocalhost = true;
     std::string docker_args = localhostConnection(isLocalhost, settings);
     if (docker_args == "Directory Error") {
         return 1;
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
         }
     };
     QTimer timer;
-    timer.setInterval(10000);
+    timer.setInterval(5000);
     QObject::connect(&timer, &QTimer::timeout, checkDBConnection);
     timer.start();
 
@@ -100,12 +100,24 @@ int main(int argc, char *argv[])
                     for (const auto &user_id : response["response"]["items"].toArray()) {
                         if (user_id.toObject()["bdate"].toString() != "") {
                             QString tmp_date_resolver = user_id.toObject()["bdate"].toString();
-                            if (tmp_date_resolver.length() <= 5) {
-                                tmp_date_resolver.append(".1900");
-                                bdates.push_back(tmp_date_resolver);
-                            } else {
-                                bdates.push_back(user_id.toObject()["bdate"].toString());
+                            QStringList dateParts = tmp_date_resolver.split('.');
+                            if (dateParts.length() == 2) {
+                                QDate currentDate = QDate::currentDate();
+                                int currentYear = currentDate.year();
+                                tmp_date_resolver = QString("%1.%2.%3")
+                                                        .arg(dateParts[0].toInt(), 2, 10, QChar('0'))
+                                                        .arg(dateParts[1].toInt(), 2, 10, QChar('0'))
+                                                        .arg(currentYear);
+                            } else if (dateParts.length() == 3) {
+                                int day = dateParts[0].toInt();
+                                int month = dateParts[1].toInt();
+                                int year = dateParts[2].toInt();
+                                tmp_date_resolver = QString("%1.%2.%3")
+                                                        .arg(day, 2, 10, QChar('0'))
+                                                        .arg(month, 2, 10, QChar('0'))
+                                                        .arg(year);
                             }
+                            bdates.push_back(tmp_date_resolver);
                             friends_id.push_back(user_id.toObject()["id"].toInteger());
                             fios.push_back(user_id.toObject()["first_name"].toString() + " "
                                            + user_id.toObject()["last_name"].toString());
