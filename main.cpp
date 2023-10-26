@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     w.setDockerPath(docker_args);
     w.show();
 
-    QVariantList bdates, fios, friends_id;
+    QVariantList bdates, fios, friends_id, photos;
     qint64 my_id = 0;
     QString my_fio = "";
     auto oauth = new QOAuth2AuthorizationCodeFlow(&w);
@@ -87,13 +87,16 @@ int main(int argc, char *argv[])
                      &QOAuth2AuthorizationCodeFlow::authorizeWithBrowser,
                      &QDesktopServices::openUrl);
     QObject::connect(
-        oauth, &QOAuth2AuthorizationCodeFlow::granted, [&w, &friends_id, &bdates, &fios, oauth]() {
-            const QUrl getFriends{"https://api.vk.com/method/friends.get?fields=bdate"};
+        oauth,
+        &QOAuth2AuthorizationCodeFlow::granted,
+        [&w, &friends_id, &bdates, &fios, &photos, oauth]() {
+            const QUrl getFriends{
+                "https://api.vk.com/method/friends.get?fields=bdate,photo_200_orig"};
             auto network_reply = oauth->post(getFriends, {{"v", 5.131}});
             QObject::connect(
                 network_reply,
                 &QNetworkReply::finished,
-                [&w, &friends_id, &bdates, &fios, network_reply]() {
+                [&w, &friends_id, &bdates, &fios, &photos, network_reply]() {
                     network_reply->deleteLater();
                     QJsonDocument response = QJsonDocument::fromJson(network_reply->readAll());
                     qDebug() << "All my friends' birthdays:";
@@ -118,6 +121,7 @@ int main(int argc, char *argv[])
                                                         .arg(year);
                             }
                             bdates.push_back(tmp_date_resolver);
+                            photos.push_back(user_id.toObject()["photo_200_orig"].toString());
                             friends_id.push_back(user_id.toObject()["id"].toInteger());
                             fios.push_back(user_id.toObject()["first_name"].toString() + " "
                                            + user_id.toObject()["last_name"].toString());
@@ -125,6 +129,7 @@ int main(int argc, char *argv[])
                     }
                     w.setIDs(friends_id);
                     w.setBDays(bdates);
+                    w.setPhotos(photos);
                     w.setFIOs(fios);
                 });
         });

@@ -24,6 +24,10 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         connection.hpp
+        networking_p.hpp
+        networking.hpp networking.cpp
+        imagemanager.hpp imagemanager.cpp
+        images.qrc
 
 
 

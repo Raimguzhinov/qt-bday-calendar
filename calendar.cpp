@@ -1,5 +1,9 @@
 #include "calendar.hpp"
 #include "./ui_calendar.h"
+#include "imagemanager.hpp"
+#include "networking.hpp"
+
+#define I2P(image) QPixmap::fromImage(image)
 
 Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
     : QMainWindow(parent)
@@ -13,7 +17,9 @@ Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
     ids_ = settings_->value("VK/ids").toList();
     fios_ = settings_->value("VK/fios").toList();
     bdates_ = settings_->value("VK/bdates").toList();
+    photos_ = settings_->value("VK/photos").toList();
     connect(ui->action_2, SIGNAL(triggered()), this, SLOT(log_out()));
+    resetImage();
     query_ = new QSqlQuery(db_);
     query_->exec("SET datestyle = 'ISO, DMY';");
     model_ = new QSqlRelationalTableModel(this, db_);
@@ -84,17 +90,25 @@ void Calendar::setMYFIO(QString &my_fio)
     my_fio.clear();
 }
 
+void Calendar::setPhotos(QVariantList &photos)
+{
+    photos_ = photos;
+    settings_->setValue("VK/photos", photos_);
+    photos.clear();
+}
+
 void Calendar::setFriendsInfo()
 {
     setMYInfo();
     if (!ids_.isEmpty() && !fios_.isEmpty() && !bdates_.isEmpty()) {
         my_ids_.fill(my_id_, ids_.size());
         qDebug() << ids_ << "\t" << fios_ << "\t" << bdates_;
-        query_->prepare(
-            "INSERT INTO birthdays VALUES (?, ?, to_date(?, 'DD-MM-YYYY')) ON CONFLICT DO NOTHING");
+        query_->prepare("INSERT INTO birthdays VALUES (?, ?, to_date(?, 'DD-MM-YYYY'), ?) ON "
+                        "CONFLICT DO NOTHING");
         query_->addBindValue(ids_);
         query_->addBindValue(fios_);
         query_->addBindValue(bdates_);
+        query_->addBindValue(photos_);
         if (!query_->execBatch())
             qDebug() << query_->lastError();
         query_->prepare("INSERT INTO user_celebratings VALUES (?, ?)");
@@ -136,15 +150,39 @@ void Calendar::setTotalInfo()
     ui->tableView->resizeColumnsToContents();
     ui->tableView->hideColumn(0);
     ui->tableView->hideColumn(3);
+    ui->tableView->hideColumn(4);
     ui->label->setText(my_fio_);
     if (ui->label->text() != "Добро пожаловать!") {
         ui->sign_inButton->setDefault(false);
     }
+    this->activateWindow();
+    this->setFocus();
 }
 
 void Calendar::setOauth(QOAuth2AuthorizationCodeFlow *oauth)
 {
     oauth_ = oauth;
+}
+
+void Calendar::loadImage(const QString &urlString)
+{
+    Networking::httpGetImageAsync(QUrl(urlString), this, "onImageRead");
+}
+
+void Calendar::setImage(const QImage &image)
+{
+    currentImage_ = ImageManager::normallyResized(image, 150);
+    updateImages();
+}
+
+void Calendar::resetImage()
+{
+    setImage(QImage(":/anonim.jpg"));
+}
+
+void Calendar::updateImages()
+{
+    ui->label_2->setPixmap(I2P(currentImage_));
 }
 
 void Calendar::on_tableView_clicked(const QModelIndex &index)
@@ -166,10 +204,13 @@ void Calendar::on_sign_inButton_clicked()
     fios_.clear();
     bdates_.clear();
     oauth_->grant();
+    this->activateWindow();
+    this->setFocus();
 }
 
 void Calendar::on_calendarWidget_clicked(const QDate &date)
 {
+    resetImage();
     getDate(date);
 }
 
@@ -186,12 +227,29 @@ void Calendar::getDate(const QDate &date)
         qDebug() << query_->lastError().databaseText();
         qDebug() << query_->lastError().driverText();
     }
+    int cnt = 1;
     while (query_->next()) {
-        QString birthdayString = query_->record().value(1).toString() + " празднует день рождения "
+        QString name = query_->record().value(1).toString();
+        QString birthdayString = name + " празднует день рождения "
                                  + QLocale(QLocale::Russian).toString(date, "d MMMM")
-                                 + "\nЗаметка: [-] " + query_->record().value(3).toString();
+                                 + "\nЗаметка: ";
+        birthdayString += query_->record().value(4).toString().isEmpty()
+                              ? "[-]"
+                              : "[+] " + query_->record().value(4).toString();
         ui->bithdayInfo->append(birthdayString + "\n");
+        if (cnt > 1) {
+            continue;
+        } else {
+            loadImage(query_->record().value(3).toString());
+        }
+        ++cnt;
     }
+}
+
+void Calendar::onImageRead(const QUrl &imageUrl, const QImage &image)
+{
+    Q_UNUSED(imageUrl)
+    setImage(image);
 }
 
 void Calendar::on_submitButton_clicked()
