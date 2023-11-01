@@ -1,9 +1,12 @@
 <RCC>
-    <qresource prefix="/">
-        <file>anonim.jpg</file>
-        <file>style.css</file>
-        <file>down.png</file>
-        <file>left.png</file>
-        <file>right.png</file>
+    <qresource prefix="/images">
+        <file>resources/images/anonim.jpg</file>
+        <file>resources/images/down.png</file>
+        <file>resources/images/left.png</file>
+        <file>resources/images/right.png</file>
     </qresource>
+    <qresource prefix="/style">
+        <file>resources/style/style.css</file>
+    </qresource>
+    <qresource prefix="/helpInformation"/>
 </RCC>

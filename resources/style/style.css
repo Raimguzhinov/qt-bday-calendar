@@ -62,12 +62,12 @@ QLineEdit#lineEdit {
 
 #qt_calendar_prevmonth {
     margin-right: 10px;
-    image: url(:/images/left.png);
+    image: url(:/images/resources/images/left.png);
 }
 
 #qt_calendar_nextmonth {
     margin-left: 10px;
-    image: url(:/images/right.png);
+    image: url(:/images/resources/images/right.png);
 }
 
 #qt_calendar_prevmonth:hover,

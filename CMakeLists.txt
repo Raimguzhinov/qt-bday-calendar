@@ -28,6 +28,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         networking.hpp networking.cpp
         imagemanager.hpp imagemanager.cpp
         resources.qrc
+        helpinformation.hpp helpinformation.cpp helpinformation.ui
 
 
 

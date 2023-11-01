@@ -160,7 +160,10 @@ void Calendar::setImage(const QImage &image) {
   updateImages();
 }
 
-void Calendar::resetImage() { setImage(QImage(":/images/anonim.jpg")); }
+void Calendar::resetImage()
+{
+  setImage(QImage(":/images/resources/images/anonim.jpg"));
+}
 
 void Calendar::updateImages() {
   ui->label_2->setPixmap(
