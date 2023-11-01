@@ -1,5 +1,6 @@
 #include "calendar.hpp"
 #include "./ui_calendar.h"
+#include "helpinformation.hpp"
 #include "imagemanager.hpp"
 #include "networking.hpp"
 
@@ -36,6 +37,23 @@ Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
   }
   this->activateWindow();
   this->setFocus();
+  connect(ui->action_4, SIGNAL(triggered()), this, SLOT(slotInfo()));
+  connect(ui->action_5, SIGNAL(triggered()), this, SLOT(slotAbout()));
+  keyF11 = new QShortcut(this);
+  keyF11->setKey(Qt::Key_F11);
+  keyCtrlL = new QShortcut(this);
+  keyCtrlL->setKey(Qt::CTRL + Qt::Key_L);
+  keyCtrlO = new QShortcut(this);
+  keyCtrlO->setKey(Qt::CTRL + Qt::Key_O);
+  keyCtrlI = new QShortcut(this);
+  keyCtrlI->setKey(Qt::CTRL + Qt::Key_I);
+  keyCtrlB = new QShortcut(this);
+  keyCtrlB->setKey(Qt::CTRL + Qt::Key_B);
+  connect(keyF11, SIGNAL(activated()), this, SLOT(slotShortcutF11()));
+  connect(keyCtrlL, SIGNAL(activated()), this, SLOT(log_out()));
+  connect(keyCtrlO, SIGNAL(activated()), this, SLOT(on_sign_inButton_clicked()));
+  connect(keyCtrlI, SIGNAL(activated()), this, SLOT(slotInfo()));
+  connect(keyCtrlB, SIGNAL(activated()), this, SLOT(slotAbout()));
 }
 
 void Calendar::setDockerPath(std::string docker_args_down) {
@@ -161,7 +179,7 @@ void Calendar::setImage(const QImage &image) {
 }
 
 void Calendar::resetImage() {
-  setImage(QImage(":/images/resources/images/anonim.jpg"));
+  setImage(QImage(":/resources/images/anonim.jpg"));
 }
 
 void Calendar::updateImages() {
@@ -279,4 +297,28 @@ void Calendar::on_lineEdit_returnPressed() {
 void Calendar::log_out() {
   settings_->clear();
   this->close();
+}
+
+void Calendar::slotInfo()
+{
+  HelpInformation *form = new HelpInformation();
+  form->setWindowModality(Qt::ApplicationModal);
+  form->show();
+}
+
+void Calendar::slotAbout()
+{
+  QMessageBox::about(this,
+                     "О программе",
+                     "Версия: 0.0.1 Alpha\n\nРазработчик: Раймгужинов Диас, ИП-113\n\n            "
+                     "© 2023 уч.год, СибГУТИ");
+}
+
+void Calendar::slotShortcutF11()
+{
+  if (this->isFullScreen()) {
+    this->showNormal();
+  } else {
+    this->showFullScreen();
+  }
 }

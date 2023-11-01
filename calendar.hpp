@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QOAuth2AuthorizationCodeFlow>
 #include <QSettings>
+#include <QShortcut>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSqlRecord>
@@ -36,6 +37,9 @@ public slots:
     void loadImage(const QString &urlString);
     void setImage(const QImage &image);
     void resetImage();
+    void slotInfo();
+    void slotAbout();
+    void slotShortcutF11();
 
 private slots:
     void on_tableView_clicked(const QModelIndex &index);
@@ -65,4 +69,9 @@ private:
     qint64 my_id_ = 0;
     QString my_fio_ = "";
     QOAuth2AuthorizationCodeFlow *oauth_;
+    QShortcut *keyF11;
+    QShortcut *keyCtrlL;
+    QShortcut *keyCtrlO;
+    QShortcut *keyCtrlI;
+    QShortcut *keyCtrlB;
 };

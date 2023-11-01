@@ -239,6 +239,8 @@ connection :(</string>
     <property name="title">
      <string>Справка</string>
     </property>
+    <addaction name="action_4"/>
+    <addaction name="action_5"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
@@ -258,6 +260,16 @@ connection :(</string>
   <action name="action_2">
    <property name="text">
     <string>Выйти</string>
+   </property>
+  </action>
+  <action name="action_4">
+   <property name="text">
+    <string>Помощь</string>
+   </property>
+  </action>
+  <action name="action_5">
+   <property name="text">
+    <string>О Нас</string>
    </property>
   </action>
  </widget>

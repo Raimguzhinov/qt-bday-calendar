@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
   timer.start();
 
   Calendar w(nullptr, &db);
-  QFile file(":/style/resources/style/style.css");
+  QFile file(":/resources/style/style.css");
   file.open(QFile::ReadOnly);
   w.setStyleSheet(file.readAll());
   w.setDockerPath(docker_args);
