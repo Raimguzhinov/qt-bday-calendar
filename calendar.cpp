@@ -160,11 +160,11 @@ void Calendar::setImage(const QImage &image) {
   updateImages();
 }
 
-void Calendar::resetImage() { setImage(QImage(":/anonim.jpg")); }
+void Calendar::resetImage() { setImage(QImage(":/images/anonim.jpg")); }
 
 void Calendar::updateImages() {
   ui->label_2->setPixmap(
-      I2P(ImageManager::roundSquared(currentImage_, 147, 28)));
+      I2P(ImageManager::roundSquared(currentImage_, 147, 18)));
 }
 
 void Calendar::on_tableView_clicked(const QModelIndex &index) {

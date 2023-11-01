@@ -8,6 +8,7 @@ QPushButton#sign_inButton {
     padding: 5px 10px;
     border: none;
     border-radius: 4px;
+    font-size: 10px;
 }
 
 QPushButton#sign_inButton:hover {
@@ -20,9 +21,17 @@ QPushButton#sign_inButton:pressed {
 
 QLabel#label_2 {
     font-weight: bold;
-    border: 3px outset #a010f0;
-    border-left: 3px outset #a919c5;
-    border-radius: 30px;
+    border: 2px outset #a010f0;
+    border-left: 2px outset #a919c5;
+    border-radius: 18px;
+    padding-right: 1px;
+    padding-bottom: 1px;
+}
+
+QLineEdit#lineEdit {
+    border-radius: 5px;
+    padding: 1px 10px;
+    font-size: 11px;
 }
 
 #calendarWidget QWidget {
@@ -53,12 +62,12 @@ QLabel#label_2 {
 
 #qt_calendar_prevmonth {
     margin-right: 10px;
-    image: url(:/left.png);
+    image: url(:/images/left.png);
 }
 
 #qt_calendar_nextmonth {
     margin-left: 10px;
-    image: url(:/right.png);
+    image: url(:/images/right.png);
 }
 
 #qt_calendar_prevmonth:hover,
@@ -124,3 +133,21 @@ QLabel#label_2 {
 #qt_calendar_calendarview::item:pressed {
     background-color: #F0B68E;
 }
+
+QPushButton#submitButton {
+    background-color: #458FEE;
+    color: white;
+    padding: 3px 7px;
+    border: none;
+    border-radius: 4px;
+    font-size: 9px;
+}
+
+QPushButton#submitButton:hover {
+    background-color: #EEC95D;
+}
+
+QPushButton#submitButton:pressed {
+    background-color: #F0B68E;
+}
+
