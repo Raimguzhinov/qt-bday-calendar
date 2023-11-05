@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 project(BirthdayCalendar VERSION 0.1 LANGUAGES CXX)
 
@@ -9,13 +9,13 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Sql NetworkAuth)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Sql NetworkAuth)
 
 set(PROJECT_SOURCES
         main.cpp
         calendar.cpp
-        calendar.h
+        calendar.hpp
         calendar.ui
 )
 
@@ -23,6 +23,15 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(BirthdayCalendar
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        connection.hpp
+        networking_p.hpp
+        networking.hpp networking.cpp
+        imagemanager.hpp imagemanager.cpp
+        resources.qrc
+        helpinformation.hpp helpinformation.cpp helpinformation.ui
+
+
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET BirthdayCalendar APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -42,7 +51,7 @@ else()
     endif()
 endif()
 
-target_link_libraries(BirthdayCalendar PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+target_link_libraries(BirthdayCalendar PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::NetworkAuth)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

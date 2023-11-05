@@ -15,6 +15,7 @@
 *_pch.h.cpp
 *_resource.rc
 *.qm
+docker-compose.yaml
 .#*
 *.*#
 core
@@ -34,6 +35,8 @@ Thumbs.db
 *.rc
 /.qmake.cache
 /.qmake.stash
+/build
+/data
 
 # qtcreator generated files
 *.pro.user*
