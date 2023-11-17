@@ -52,7 +52,8 @@ private slots:
     void setFriendsInfo();
     void setMYInfo();
     void setTotalInfo();
-    void getDate(const QDate &date);
+    void getDate(const QDate &startDate, const QDate &endDate);
+    void clearDateTextFormats();
     void showDateRange(const QDate &startDate, const QDate &endDate);
     void onImageRead(const QUrl &imageUrl, const QImage &image);
     void on_searchInput_textChanged(const QString &arg1);

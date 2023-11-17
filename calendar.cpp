@@ -4,7 +4,7 @@
 #include "helpinformation.hpp"
 #include "imagemanager.hpp"
 #include "networking.hpp"
-#include <thread>
+#include <utility>
 
 #define I2P(image) QPixmap::fromImage(image)
 
@@ -197,7 +197,7 @@ void Calendar::on_tableView_clicked(const QModelIndex &index) {
   QVariant birthdayData = index.sibling(index.row(), 2).data();
   if (birthdayData.isValid() && birthdayData.type() == QVariant::Date) {
     current_birthday_date_ = birthdayData.toDate();
-    getDate(current_birthday_date_);
+    getDate(current_birthday_date_, current_birthday_date_);
     ui->calendarWidget->setSelectedDate(current_birthday_date_);
   }
   query_->prepare(
@@ -226,13 +226,13 @@ void Calendar::on_sign_inButton_clicked() {
 }
 
 QDate firstDate;
-
 void Calendar::on_calendarWidget_clicked(const QDate &date)
 {
   resetImage();
   if (firstDate.isNull()) {
+    clearDateTextFormats();
     firstDate = date;
-    getDate(firstDate);
+    getDate(firstDate, firstDate);
   } else {
     showDateRange(firstDate, date);
     firstDate = QDate();
@@ -241,22 +241,46 @@ void Calendar::on_calendarWidget_clicked(const QDate &date)
 
 void Calendar::showDateRange(const QDate &startDate, const QDate &endDate)
 {
-  // ui->calendarWidget->setDateRange(startDate, endDate);
-  // здесь можете использовать startDate и endDate для отображения выбранного диапазона дат
-  // например, обновить интерфейс для отображения выбранного диапазона
+  QDate tmpStartDate = startDate;
+  QDate tmpEndDate = endDate;
+  if (tmpStartDate > tmpEndDate) {
+    QDate tmp = tmpStartDate;
+    tmpStartDate.setDate(tmpEndDate.year(), tmpEndDate.month(), tmpEndDate.day());
+    tmpEndDate.setDate(tmp.year(), tmp.month(), tmp.day());
+  }
+  getDate(tmpStartDate, tmpEndDate);
+  QTextCharFormat format;
+  format.setBackground(Qt::darkCyan);
+  for (QDate d = tmpStartDate; d <= tmpEndDate; d = d.addDays(1)) {
+    ui->calendarWidget->setDateTextFormat(d, format);
+  }
 }
 
-void Calendar::getDate(const QDate &date)
+void Calendar::clearDateTextFormats()
+{
+  QTextCharFormat format;
+  QDate firstDayOfMonth(ui->calendarWidget->selectedDate().year(),
+                        ui->calendarWidget->selectedDate().month(),
+                        1);
+  QDate lastDayOfMonth = firstDayOfMonth.addMonths(2).addDays(-1);
+  for (QDate date = firstDayOfMonth.addMonths(-1); date <= lastDayOfMonth; date = date.addDays(1)) {
+    ui->calendarWidget->setDateTextFormat(date, format);
+  }
+}
+
+void Calendar::getDate(const QDate &startDate, const QDate &endDate)
 {
   ui->bithdayInfo->setPlainText("");
   query_->prepare("SELECT bdays.* FROM birthdays bdays LEFT JOIN user_celebratings uc "
-                  "ON "
-                  "uc.self_friends_id = bdays.friend_vk_id WHERE "
-                  "uc.self_user_id=:self_user_id AND DATE_PART('month', bday_date) "
-                  "= DATE_PART('month', :startDate::date) AND DATE_PART('day', bday_date) "
-                  "= DATE_PART('day', :startDate::date);");
+                  "ON uc.self_friends_id = bdays.friend_vk_id WHERE "
+                  "uc.self_user_id=:self_user_id AND "
+                  "DATE_PART('month', bday_date) = DATE_PART('month', :startDate::date) AND "
+                  "DATE_PART('day', bday_date) BETWEEN DATE_PART('day', :startDate::date) AND "
+                  "DATE_PART('day', :endDate::date)");
   query_->bindValue(":self_user_id", QString::number(my_id_));
-  query_->bindValue(":startDate", date.toString("yyyy-MM-dd"));
+  query_->bindValue(":startDate", startDate.toString("yyyy-MM-dd"));
+  query_->bindValue(":endDate", endDate.toString("yyyy-MM-dd"));
+
   if (!query_->exec()) {
     qDebug() << query_->lastError().databaseText();
     qDebug() << query_->lastError().driverText();
@@ -264,9 +288,10 @@ void Calendar::getDate(const QDate &date)
   int cnt = 1;
   while (query_->next()) {
     QString name = query_->record().value(1).toString();
-    QString birthdayString =
-        name + " празднует день рождения " +
-        QLocale(QLocale::Russian).toString(date, "d MMMM") + "\nЗаметка: ";
+    QString birthdayString = name + " празднует "
+                             + QLocale(QLocale::Russian)
+                                   .toString(query_->record().value(2).toDate(), "d MMMM")
+                             + "\nЗаметка: ";
     birthdayString += query_->record().value(4).toString().isEmpty()
                           ? "[-]"
                           : "[+] " + query_->record().value(4).toString();
