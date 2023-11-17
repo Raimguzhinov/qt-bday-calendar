@@ -1,60 +1,64 @@
 #include "calendar.hpp"
 #include "./ui_calendar.h"
+//#include "customcalendarwidget.hpp"
 #include "helpinformation.hpp"
 #include "imagemanager.hpp"
 #include "networking.hpp"
+#include <thread>
 
 #define I2P(image) QPixmap::fromImage(image)
 
 Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
-    : QMainWindow(parent), db_(*db), ui(new Ui::Calendar) {
-  ui->setupUi(this);
-  settings_ = new QSettings("BirthdayCalendar", "CalendarSettings", this);
-  my_id_ = settings_->value("VK/my_id").toLongLong();
-  my_fio_ = settings_->value("VK/my_fio").toString();
-  ids_ = settings_->value("VK/ids").toList();
-  fios_ = settings_->value("VK/fios").toList();
-  bdates_ = settings_->value("VK/bdates").toList();
-  photos_ = settings_->value("VK/photos").toList();
-  connect(ui->action_2, SIGNAL(triggered()), this, SLOT(log_out()));
-  resetImage();
-  query_ = new QSqlQuery(db_);
-  query_->exec("SET datestyle = 'ISO, DMY';");
-  model_ = new QSqlRelationalTableModel(this, db_);
-  model_->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
-  model_->setTable("birthdays");
-  model_->setRelation(
-      model_->fieldIndex("friend_vk_id"),
-      QSqlRelation("user_celebratings", "self_friends_id", "self_user_id"));
-  if (my_id_ != 0) {
-    setTotalInfo();
-  } else {
-    QTimer timer;
-    timer.setInterval(5000);
-    connect(&timer, &QTimer::timeout, this,
-            &Calendar::on_sign_inButton_clicked);
-    timer.start();
-  }
-  this->activateWindow();
-  this->setFocus();
-  connect(ui->action_4, SIGNAL(triggered()), this, SLOT(slotInfo()));
-  connect(ui->action_5, SIGNAL(triggered()), this, SLOT(slotAbout()));
-  keyF11 = new QShortcut(this);
-  keyF11->setKey(Qt::Key_F11);
-  keyCtrlL = new QShortcut(this);
-  keyCtrlL->setKey(Qt::CTRL + Qt::Key_L);
-  keyCtrlO = new QShortcut(this);
-  keyCtrlO->setKey(Qt::CTRL + Qt::Key_O);
-  keyCtrlI = new QShortcut(this);
-  keyCtrlI->setKey(Qt::CTRL + Qt::Key_I);
-  keyCtrlB = new QShortcut(this);
-  keyCtrlB->setKey(Qt::CTRL + Qt::Key_B);
-  connect(keyF11, SIGNAL(activated()), this, SLOT(slotShortcutF11()));
-  connect(keyCtrlL, SIGNAL(activated()), this, SLOT(log_out()));
-  connect(keyCtrlO, SIGNAL(activated()), this,
-          SLOT(on_sign_inButton_clicked()));
-  connect(keyCtrlI, SIGNAL(activated()), this, SLOT(slotInfo()));
-  connect(keyCtrlB, SIGNAL(activated()), this, SLOT(slotAbout()));
+    : QMainWindow(parent)
+    , db_(*db)
+    , ui(new Ui::Calendar)
+{
+    ui->setupUi(this);
+    ui->calendarWidget->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
+    ui->calendarWidget->setGridVisible(false);
+    settings_ = new QSettings("BirthdayCalendar", "CalendarSettings", this);
+    my_id_ = settings_->value("VK/my_id").toLongLong();
+    my_fio_ = settings_->value("VK/my_fio").toString();
+    ids_ = settings_->value("VK/ids").toList();
+    fios_ = settings_->value("VK/fios").toList();
+    bdates_ = settings_->value("VK/bdates").toList();
+    photos_ = settings_->value("VK/photos").toList();
+    connect(ui->action_2, SIGNAL(triggered()), this, SLOT(log_out()));
+    resetImage();
+    query_ = new QSqlQuery(db_);
+    query_->exec("SET datestyle = 'ISO, DMY';");
+    model_ = new QSqlRelationalTableModel(this, db_);
+    model_->setEditStrategy(QSqlRelationalTableModel::OnManualSubmit);
+    model_->setTable("birthdays");
+    model_->setRelation(model_->fieldIndex("friend_vk_id"),
+                        QSqlRelation("user_celebratings", "self_friends_id", "self_user_id"));
+    if (my_id_ != 0) {
+        setTotalInfo();
+    } else {
+        QTimer timer;
+        timer.setInterval(5000);
+        connect(&timer, &QTimer::timeout, this, &Calendar::on_sign_inButton_clicked);
+        timer.start();
+    }
+    this->activateWindow();
+    this->setFocus();
+    connect(ui->action_4, SIGNAL(triggered()), this, SLOT(slotInfo()));
+    connect(ui->action_5, SIGNAL(triggered()), this, SLOT(slotAbout()));
+    keyF11 = new QShortcut(this);
+    keyF11->setKey(Qt::Key_F11);
+    keyCtrlL = new QShortcut(this);
+    keyCtrlL->setKey(Qt::CTRL + Qt::Key_L);
+    keyCtrlO = new QShortcut(this);
+    keyCtrlO->setKey(Qt::CTRL + Qt::Key_O);
+    keyCtrlI = new QShortcut(this);
+    keyCtrlI->setKey(Qt::CTRL + Qt::Key_I);
+    keyCtrlB = new QShortcut(this);
+    keyCtrlB->setKey(Qt::CTRL + Qt::Key_B);
+    connect(keyF11, SIGNAL(activated()), this, SLOT(slotShortcutF11()));
+    connect(keyCtrlL, SIGNAL(activated()), this, SLOT(log_out()));
+    connect(keyCtrlO, SIGNAL(activated()), this, SLOT(on_sign_inButton_clicked()));
+    connect(keyCtrlI, SIGNAL(activated()), this, SLOT(slotInfo()));
+    connect(keyCtrlB, SIGNAL(activated()), this, SLOT(slotAbout()));
 }
 
 void Calendar::setDockerPath(std::string docker_args_down) {
@@ -221,22 +225,38 @@ void Calendar::on_sign_inButton_clicked() {
   this->setFocus();
 }
 
-void Calendar::on_calendarWidget_clicked(const QDate &date) {
+QDate firstDate;
+
+void Calendar::on_calendarWidget_clicked(const QDate &date)
+{
   resetImage();
-  getDate(date);
+  if (firstDate.isNull()) {
+    firstDate = date;
+    getDate(firstDate);
+  } else {
+    showDateRange(firstDate, date);
+    firstDate = QDate();
+  }
 }
 
-void Calendar::getDate(const QDate &date) {
+void Calendar::showDateRange(const QDate &startDate, const QDate &endDate)
+{
+  // ui->calendarWidget->setDateRange(startDate, endDate);
+  // здесь можете использовать startDate и endDate для отображения выбранного диапазона дат
+  // например, обновить интерфейс для отображения выбранного диапазона
+}
+
+void Calendar::getDate(const QDate &date)
+{
   ui->bithdayInfo->setPlainText("");
-  query_->prepare(
-      "SELECT bdays.* FROM birthdays bdays LEFT JOIN user_celebratings uc "
-      "ON "
-      "uc.self_friends_id = bdays.friend_vk_id WHERE "
-      "uc.self_user_id=:self_user_id AND DATE_PART('month', bday_date) "
-      "= DATE_PART('month', :date::date) AND DATE_PART('day', bday_date) "
-      "= DATE_PART('day', :date::date);");
+  query_->prepare("SELECT bdays.* FROM birthdays bdays LEFT JOIN user_celebratings uc "
+                  "ON "
+                  "uc.self_friends_id = bdays.friend_vk_id WHERE "
+                  "uc.self_user_id=:self_user_id AND DATE_PART('month', bday_date) "
+                  "= DATE_PART('month', :startDate::date) AND DATE_PART('day', bday_date) "
+                  "= DATE_PART('day', :startDate::date);");
   query_->bindValue(":self_user_id", QString::number(my_id_));
-  query_->bindValue(":date", date.toString("yyyy-MM-dd"));
+  query_->bindValue(":startDate", date.toString("yyyy-MM-dd"));
   if (!query_->exec()) {
     qDebug() << query_->lastError().databaseText();
     qDebug() << query_->lastError().driverText();
@@ -318,5 +338,22 @@ void Calendar::slotShortcutF11() {
     this->showNormal();
   } else {
     this->showFullScreen();
+  }
+}
+
+void Calendar::on_searchInput_textChanged(const QString &arg1)
+{
+  QString userFilter = "self_user_id=" + QString::number(my_id_);
+  QString friendFilter = "LOWER(friend_name) LIKE '%" + arg1.toLower() + "%'";
+  QString dateFilter = "to_char(bday_date, 'DD.MM.YYYY') LIKE '%" + arg1 + "%'";
+
+  if (!arg1.isEmpty()) {
+    if (arg1.front().isDigit()) {
+      model_->setFilter(userFilter + " AND " + dateFilter);
+    } else {
+      model_->setFilter(userFilter + " AND " + friendFilter);
+    }
+  } else {
+    model_->setFilter(userFilter);
   }
 }

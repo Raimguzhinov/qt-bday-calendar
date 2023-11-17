@@ -29,7 +29,7 @@ constexpr quint32 scopeMask = 2;
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
   QSettings settings("BirthdayCalendar", "GeneralSettings");
-  bool isLocalhost = false;
+  bool isLocalhost = true;
   std::string docker_args = localhostConnection(isLocalhost, settings);
   if (docker_args == "Directory Error") {
     return 1;

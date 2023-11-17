@@ -53,7 +53,9 @@ private slots:
     void setMYInfo();
     void setTotalInfo();
     void getDate(const QDate &date);
+    void showDateRange(const QDate &startDate, const QDate &endDate);
     void onImageRead(const QUrl &imageUrl, const QImage &image);
+    void on_searchInput_textChanged(const QString &arg1);
 
 private:
     Ui::Calendar *ui;
