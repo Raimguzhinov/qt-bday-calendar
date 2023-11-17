@@ -1,6 +1,5 @@
 #include "calendar.hpp"
 #include "./ui_calendar.h"
-//#include "customcalendarwidget.hpp"
 #include "helpinformation.hpp"
 #include "imagemanager.hpp"
 #include "networking.hpp"
@@ -16,6 +15,9 @@ Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
     ui->setupUi(this);
     ui->calendarWidget->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
     ui->calendarWidget->setGridVisible(false);
+    ui->searchInput->setClearButtonEnabled(true);
+    ui->searchInput->addAction(QIcon(":/resources/images/search.ico"),
+                               QLineEdit::ActionPosition::LeadingPosition);
     settings_ = new QSettings("BirthdayCalendar", "CalendarSettings", this);
     my_id_ = settings_->value("VK/my_id").toLongLong();
     my_fio_ = settings_->value("VK/my_fio").toString();
@@ -371,7 +373,6 @@ void Calendar::on_searchInput_textChanged(const QString &arg1)
   QString userFilter = "self_user_id=" + QString::number(my_id_);
   QString friendFilter = "LOWER(friend_name) LIKE '%" + arg1.toLower() + "%'";
   QString dateFilter = "to_char(bday_date, 'DD.MM.YYYY') LIKE '%" + arg1 + "%'";
-
   if (!arg1.isEmpty()) {
     if (arg1.front().isDigit()) {
       model_->setFilter(userFilter + " AND " + dateFilter);

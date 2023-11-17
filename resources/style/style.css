@@ -2,6 +2,26 @@ QWidget {
     font-family: JetBrainsMonoNL Nerd Font;
 }
 
+QLineEdit#searchInput {
+    border-radius: 10px;
+    padding: 3px 0px;
+    font-size: 13px;
+}
+
+QLineEdit#searchInput:hover {
+    border: 1px solid #a010f0;
+    color: #F0F0F0;
+}
+
+QLineEdit#searchInput:focus {
+    border: 1px solid #a919c5;
+}
+
+QLineEdit#searchInput:selected {
+    background: #a010f0;
+    color: #32414B;
+}
+
 QPushButton#sign_inButton {
     background-color: #4CAF50;
     color: white;
@@ -33,9 +53,9 @@ QLabel#label_2:hover {
 }
 
 QLineEdit#lineEdit {
-    border-radius: 5px;
+    border-radius: 10px;
     padding: 1px 10px;
-    font-size: 11px;
+    font-size: 12px;
 }
 
 QLineEdit#lineEdit:hover {

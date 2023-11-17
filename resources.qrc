@@ -9,5 +9,6 @@
         <file>resources/helpinformation/edit.html</file>
         <file>resources/helpinformation/hotKeys.html</file>
         <file>resources/helpinformation/index.html</file>
+        <file>resources/images/search.ico</file>
     </qresource>
 </RCC>

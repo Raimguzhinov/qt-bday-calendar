@@ -36,6 +36,9 @@
           <property name="echoMode">
            <enum>QLineEdit::Normal</enum>
           </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
           <property name="placeholderText">
            <string>Поиск</string>
           </property>
@@ -71,16 +74,6 @@
            <enum>Qt::SolidLine</enum>
           </property>
           <property name="sortingEnabled">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QPushButton" name="submitButton_2">
-          <property name="text">
-           <string>Поиск</string>
-          </property>
-          <property name="default">
            <bool>true</bool>
           </property>
          </widget>
