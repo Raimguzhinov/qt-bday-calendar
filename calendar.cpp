@@ -15,6 +15,13 @@ Calendar::Calendar(QWidget *parent, QSqlDatabase *db)
     ui->setupUi(this);
     ui->calendarWidget->setVerticalHeaderFormat(QCalendarWidget::NoVerticalHeader);
     ui->calendarWidget->setGridVisible(false);
+    QSqlQuery minQuery("SELECT '1900-01-01'::DATE AS min_date;");
+    QSqlQuery maxQuery("SELECT '2100-12-31'::DATE AS max_date;");
+    if (minQuery.next() && maxQuery.next()) {
+        QDate minDate = minQuery.value(0).toDate();
+        QDate maxDate = maxQuery.value(0).toDate();
+        ui->calendarWidget->setDateRange(minDate, maxDate);
+    }
     ui->searchInput->setClearButtonEnabled(true);
     ui->searchInput->addAction(QIcon(":/resources/images/search.ico"),
                                QLineEdit::ActionPosition::LeadingPosition);
@@ -170,6 +177,24 @@ void Calendar::setTotalInfo() {
   if (ui->label->text() != "Добро пожаловать!") {
     ui->sign_inButton->setDefault(false);
   }
+  QTextCharFormat format;
+  format.setForeground(QColor("#ffdc6a"));
+  format.setFontWeight(QFont::ExtraBold);
+  format.setToolTip("🎁🎉🎊🎂🎈");
+  format.setFontUnderline(true);
+
+  QMap<QString, bool> birthdayMap;
+  for (const auto &bday : bdates_) {
+    QString shortDate = bday.toString().left(5);
+    birthdayMap[shortDate] = true;
+  }
+  for (QDate d = ui->calendarWidget->minimumDate(); d <= ui->calendarWidget->maximumDate();
+       d = d.addDays(1)) {
+    QString shortDate = d.toString("dd.MM");
+    if (birthdayMap.contains(shortDate)) {
+      ui->calendarWidget->setDateTextFormat(d, format);
+    }
+  }
   this->activateWindow();
   this->setFocus();
 }
@@ -251,60 +276,99 @@ void Calendar::showDateRange(const QDate &startDate, const QDate &endDate)
     tmpEndDate.setDate(tmp.year(), tmp.month(), tmp.day());
   }
   getDate(tmpStartDate, tmpEndDate);
-  QTextCharFormat format;
-  format.setBackground(Qt::darkCyan);
+
   for (QDate d = tmpStartDate; d <= tmpEndDate; d = d.addDays(1)) {
-    ui->calendarWidget->setDateTextFormat(d, format);
+    QTextCharFormat currentFormat = ui->calendarWidget->dateTextFormat(d);
+
+    bool underline = currentFormat.fontUnderline();
+    int fontw = currentFormat.fontWeight();
+    QString tooltip = currentFormat.toolTip();
+    QColor curforegroundColor = currentFormat.foreground().color();
+    QColor foregroundColor;
+    if (curforegroundColor == Qt::black) {
+      foregroundColor = (d.dayOfWeek() == Qt::Saturday || d.dayOfWeek() == Qt::Sunday) ? Qt::red
+                                                                                       : Qt::white;
+    } else {
+      foregroundColor = curforegroundColor;
+    }
+    QTextCharFormat newFormat;
+    newFormat.setBackground(Qt::darkCyan);
+    newFormat.setFontUnderline(underline);
+    newFormat.setFontWeight(fontw);
+    newFormat.setToolTip(tooltip);
+    newFormat.setForeground(foregroundColor);
+    ui->calendarWidget->setDateTextFormat(d, newFormat);
   }
 }
 
 void Calendar::clearDateTextFormats()
 {
-  QTextCharFormat format;
   QDate firstDayOfMonth(ui->calendarWidget->selectedDate().year(),
                         ui->calendarWidget->selectedDate().month(),
                         1);
   QDate lastDayOfMonth = firstDayOfMonth.addMonths(2).addDays(-1);
+
   for (QDate date = firstDayOfMonth.addMonths(-1); date <= lastDayOfMonth; date = date.addDays(1)) {
-    ui->calendarWidget->setDateTextFormat(date, format);
+    QTextCharFormat currentFormat = ui->calendarWidget->dateTextFormat(date);
+
+    if (currentFormat.background() == Qt::darkCyan) {
+      QTextCharFormat newFormat = currentFormat;
+      newFormat.setBackground(QColor("#262626"));
+      ui->calendarWidget->setDateTextFormat(date, newFormat);
+    }
+  }
+}
+
+QSqlQuery Calendar::getDataQuery(const QDate &startDate, const QDate &endDate)
+{
+  QSqlQuery query;
+
+  query.prepare("SELECT bdays.* FROM birthdays bdays LEFT JOIN user_celebratings uc "
+                "ON uc.self_friends_id = bdays.friend_vk_id WHERE "
+                "uc.self_user_id=:self_user_id AND "
+                "DATE_PART('month', bday_date) = DATE_PART('month', :startDate::date) AND "
+                "DATE_PART('day', bday_date) BETWEEN DATE_PART('day', :startDate::date) AND "
+                "DATE_PART('day', :endDate::date)");
+  query.bindValue(":self_user_id", QString::number(my_id_));
+  query.bindValue(":startDate", startDate.toString("yyyy-MM-dd"));
+  query.bindValue(":endDate", endDate.toString("yyyy-MM-dd"));
+
+  if (!query.exec()) {
+    qDebug() << query.lastError().databaseText();
+    qDebug() << query.lastError().driverText();
+  }
+
+  return query;
+}
+
+void Calendar::processDataQuery(QSqlQuery &query)
+{
+  ui->bithdayInfo->setPlainText("");
+  int cnt = 1;
+
+  while (query.next()) {
+    QString name = query.record().value(1).toString();
+    QString birthdayString = name + " празднует "
+                             + QLocale(QLocale::Russian)
+                                   .toString(query.record().value(2).toDate(), "d MMMM")
+                             + "\nЗаметка: ";
+    birthdayString += query.record().value(4).toString().isEmpty()
+                          ? "[-]"
+                          : "[+] " + query.record().value(4).toString();
+    ui->bithdayInfo->append(birthdayString + "\n");
+
+    if (cnt == 1) {
+      loadImage(query.record().value(3).toString());
+    }
+
+    ++cnt;
   }
 }
 
 void Calendar::getDate(const QDate &startDate, const QDate &endDate)
 {
-  ui->bithdayInfo->setPlainText("");
-  query_->prepare("SELECT bdays.* FROM birthdays bdays LEFT JOIN user_celebratings uc "
-                  "ON uc.self_friends_id = bdays.friend_vk_id WHERE "
-                  "uc.self_user_id=:self_user_id AND "
-                  "DATE_PART('month', bday_date) = DATE_PART('month', :startDate::date) AND "
-                  "DATE_PART('day', bday_date) BETWEEN DATE_PART('day', :startDate::date) AND "
-                  "DATE_PART('day', :endDate::date)");
-  query_->bindValue(":self_user_id", QString::number(my_id_));
-  query_->bindValue(":startDate", startDate.toString("yyyy-MM-dd"));
-  query_->bindValue(":endDate", endDate.toString("yyyy-MM-dd"));
-
-  if (!query_->exec()) {
-    qDebug() << query_->lastError().databaseText();
-    qDebug() << query_->lastError().driverText();
-  }
-  int cnt = 1;
-  while (query_->next()) {
-    QString name = query_->record().value(1).toString();
-    QString birthdayString = name + " празднует "
-                             + QLocale(QLocale::Russian)
-                                   .toString(query_->record().value(2).toDate(), "d MMMM")
-                             + "\nЗаметка: ";
-    birthdayString += query_->record().value(4).toString().isEmpty()
-                          ? "[-]"
-                          : "[+] " + query_->record().value(4).toString();
-    ui->bithdayInfo->append(birthdayString + "\n");
-    if (cnt > 1) {
-      continue;
-    } else {
-      loadImage(query_->record().value(3).toString());
-    }
-    ++cnt;
-  }
+  QSqlQuery query = getDataQuery(startDate, endDate);
+  processDataQuery(query);
 }
 
 void Calendar::onImageRead(const QUrl &imageUrl, const QImage &image) {

@@ -52,6 +52,8 @@ private slots:
     void setFriendsInfo();
     void setMYInfo();
     void setTotalInfo();
+    QSqlQuery getDataQuery(const QDate &startDate, const QDate &endDate);
+    void processDataQuery(QSqlQuery &query);
     void getDate(const QDate &startDate, const QDate &endDate);
     void clearDateTextFormats();
     void showDateRange(const QDate &startDate, const QDate &endDate);
