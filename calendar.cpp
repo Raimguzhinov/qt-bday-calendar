@@ -248,6 +248,15 @@ void Calendar::on_sign_inButton_clicked() {
   fios_.clear();
   bdates_.clear();
   oauth_->grant();
+  QDate firstDayOfMonth(ui->calendarWidget->selectedDate().year(),
+                        ui->calendarWidget->selectedDate().month(),
+                        1);
+  QDate lastDayOfMonth = firstDayOfMonth.addMonths(2).addDays(-1);
+
+  for (QDate date = firstDayOfMonth.addMonths(-1); date <= lastDayOfMonth; date = date.addDays(1)) {
+    QTextCharFormat format;
+    ui->calendarWidget->setDateTextFormat(date, format);
+  }
   this->activateWindow();
   this->setFocus();
 }
